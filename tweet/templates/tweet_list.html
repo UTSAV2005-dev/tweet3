@@ -1,0 +1,303 @@
+{% extends 'layout.html' %}
+
+{% block title %}Index{% endblock %}
+
+{% block content %}
+<h1 class="text-white pb-4">Hey {% if user.is_authenticated %}{{ user.username }}{% else %}There{% endif %},</h1>
+<a class="btn btn-primary " href="{% url 'tweet_create' %}">Create Tweet</a>
+<div class="container row gap-3">
+{% for tweet in tweets %}
+<div class="card" style="width: 18rem;">
+  
+<!-- Username + Follow Button -->
+<div class="d-flex justify-content-between align-items-center p-3">
+  <a href="{% url 'user_profile' tweet.user.username %}" class="username-link">
+    {% if profile_user.profile.images %}
+        <img src="{{ profile_user.profile.images.url }}" alt="{{ profile_user.username }}'s profile picture" class="rounded-circle" style="width: 40px; height: 40px;">
+      {% else %}
+        <i class="fa-solid fa-user-circle fa-lg"></i> 
+      {% endif %}
+        {{ tweet.user.username }}
+  </a>
+
+  {% if tweet.user != request.user %}
+  <form class="follow-form"
+        data-url="{% url 'follow_toggle' tweet.user.username %}"
+        style="display:inline;">
+    {% csrf_token %}
+    <button type="submit"
+            class="btn btn-sm follow-btn 
+                   {% if request.user in tweet.user.profile.followers.all %}
+                       btn-outline-danger
+                   {% else %}
+                       btn-primary
+                   {% endif %}">
+      {% if request.user in tweet.user.profile.followers.all %}
+        Unfollow
+      {% else %}
+        Follow
+      {% endif %}
+    </button>
+    
+  </form>
+{% endif %}
+
+<script>
+document.querySelectorAll('.follow-form').forEach(form => {
+    if (!form.dataset.bound) {
+        form.dataset.bound = "true";
+
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            let url = this.dataset.url;
+            let csrfToken = this.querySelector('[name=csrfmiddlewaretoken]').value;
+            let button = this.querySelector('.follow-btn');
+           
+
+            button.disabled = true;
+
+            fetch(url, {
+                method: "POST",
+                headers: {
+                    "X-CSRFToken": csrfToken,
+                    "X-Requested-With": "XMLHttpRequest"
+                }
+            })
+            .then(res => res.json())
+            .then(data => {
+                // update count
+               
+
+                // toggle button text & style
+                if (data.following) {
+                    button.innerText = "Unfollow";
+                    button.classList.remove("btn-primary");
+                    button.classList.add("btn-outline-danger");
+                } else {
+                    button.innerText = "Follow";
+                    button.classList.remove("btn-outline-danger");
+                    button.classList.add("btn-primary");
+                }
+            })
+            .finally(() => {
+                button.disabled = false;
+            });
+        });
+    }
+});
+</script>
+
+
+
+</div>
+  {% if tweet.photo %}
+    <img src="{{ tweet.photo.url }}" class="card-img-top" alt="Tweet image">
+  {% endif %}
+  <div class="card-body">
+
+
+<style>
+  a.username-link {
+      font-size: 1.2rem;
+      font-weight: bold;
+      color: white;
+      text-decoration: none;
+  }
+  a.username-link:hover {
+      color: #97eaffff; /* Bootstrap primary blue */
+  }
+</style>
+
+
+
+<!-- Follow / Unfollow Button (only show if not your own profile) -->
+
+
+
+<!-- Tweet Content -->
+<p class="card-text mt-2">{{ tweet.text }}</p>
+
+    {% comment %} <a href="{% url 'like_count' tweet.id %}" class="btn btn-primary">Like</a>
+    <h4 class="card-text" style="color:white">{{tweet.like_count}}</h4> {% endcomment %}
+
+    
+
+
+    {% comment %} <i class="fa-regular fa-heart" href="{% url 'like_count' tweet.id %}"></i>
+
+    <span style="color:white;">{{ tweet.likes.count }}</span> {% endcomment %}
+
+    <!-- Like button + count -->
+
+    <form class="like-form" data-url="{% url 'like_count' tweet.id %}" style="display:inline;">
+    {% csrf_token %}
+    <button type="submit" class="like-btn" style="border:none; background:none; cursor:pointer;">
+        {% if tweet.is_liked %}
+            <i class="fa-solid fa-heart heart-icon" style="color:red;"></i>
+        {% else %}
+            <i class="fa-regular fa-heart heart-icon"></i>
+        {% endif %}
+    </button>
+    <span class="like-count" style="color:white;">{{ tweet.likes.count }}</span>
+</form>
+
+
+
+<script>
+document.querySelectorAll('.like-form').forEach(form => {
+    if (!form.dataset.bound) {   // ✅ ensure only 1 event listener
+        form.dataset.bound = "true";
+
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            let url = this.dataset.url;
+            let csrfToken = this.querySelector('[name=csrfmiddlewaretoken]').value;
+            let countSpan = this.querySelector('.like-count');
+            let icon = this.querySelector('.heart-icon');
+            let button = this.querySelector('.like-btn');
+
+            // ✅ disable button to prevent multiple clicks
+            button.disabled = true;
+
+            fetch(url, {
+                method: "POST",
+                headers: {
+                    "X-CSRFToken": csrfToken,
+                    "X-Requested-With": "XMLHttpRequest"
+                }
+            })
+            .then(res => res.json())
+            .then(data => {
+                // update like count
+                countSpan.innerText = data.likes_count;
+
+                // toggle heart style
+                if (data.liked) {
+                    icon.classList.remove("fa-regular");
+                    icon.classList.add("fa-solid");
+                    icon.style.color = "red";
+                } else {
+                    icon.classList.remove("fa-solid");
+                    icon.classList.add("fa-regular");
+                    icon.style.color = "";
+                }
+            })
+            .finally(() => {
+                // ✅ re-enable button after request completes
+                button.disabled = false;
+            });
+        });
+    }
+});
+</script>
+
+
+
+<!-- Comment button + count -->
+<a href="#" data-bs-toggle="modal" data-bs-target="#commentModal-{{ tweet.id }}" style="text-decoration:none; margin-left:10px;">
+    <i class="fa-regular fa-comment" style="color:white;"></i>
+</a>
+<span style="color:white;">{{ tweet.comments.count }}</span>
+
+<!-- Modal for Comments -->
+<div class="modal fade" id="commentModal-{{ tweet.id }}" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content bg-dark text-white rounded-3 shadow-lg">
+      
+      <!-- Modal Header -->
+      <div class="modal-header border-0">
+        <h5 class="modal-title">Comments on {{ tweet.user.username }}'s tweet</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+
+      <!-- Modal Body -->
+      <div class="modal-body">
+        <!-- Existing Comments -->
+       <div style="max-height: 200px; overflow-y: auto;">
+  {% for comment in tweet.comments.all %}
+    <div class="mb-2">
+      <!-- Top row: username + 3 dots -->
+      <div class="d-flex justify-content-between align-items-center">
+        <a href="{% url 'user_profile' comment.user.username %}" class="username-link text-decoration-none">
+          <p class="mb-0">
+            <i class="fa-solid fa-user-circle fa-1x"></i>
+            <strong>{{ comment.user.username }}</strong>
+          </p>
+        </a>
+
+        {% if comment.user == user %}
+        <div class="dropdown pe-3 m-0">
+          <button class="btn btn-link text-white p-0" type="button" id="dropdownMenu{{ comment.id }}" 
+                  data-bs-toggle="dropdown" aria-expanded="false">
+            <i class="fa-solid fa-ellipsis-vertical"></i>
+          </button>
+          <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownMenu{{ comment.id }}">
+            <li><a class="dropdown-item" href="{% url 'comment_edit' comment.id %}">Edit</a></li>
+            <li><a class="dropdown-item text-danger" href="{% url 'comment_delete' comment.id %}">Delete</a></li>
+          </ul>
+        </div>
+        {% endif %}
+      </div>
+
+      <!-- Comment body below -->
+      <p class="mt-1 mb-0">{{ comment.body }}</p>
+    </div>
+  {% empty %}
+    <p class="text-muted">No comments yet.</p>
+  {% endfor %}
+</div>
+
+
+        <!-- Add Comment Form -->
+        <form action="{% url 'add_comment' tweet.id %}" method="post" class="mt-3">
+    {% csrf_token %}
+    <textarea name="body" class="form-control mb-2" rows="2" placeholder="Write your comment..." required></textarea>
+    <button type="submit" class="btn btn-primary w-100">Post Comment</button>
+</form>
+
+
+      </div>
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+{% comment %} <div>
+    {% if tweet.user == user %}
+      <a href="{% url 'tweet_edit' tweet.id %}" class="btn btn-primary">Edit</a>
+      <a href="{% url 'tweet_delete' tweet.id %}" class="btn btn-danger">Delete</a>
+    {% endif %}
+</div> {% endcomment %}
+
+
+<div class="d-flex justify-content-between align-items-start">
+  {% comment %} <h5 class="card-title">{{tweet.user.username}}</h5> {% endcomment %}
+
+  {% if tweet.user == user %}
+  <div class="dropdown">
+    <button class="btn btn-link text-white p-0" type="button" id="dropdownMenu{{ tweet.id }}" 
+            data-bs-toggle="dropdown" aria-expanded="false">
+      <i class="fa-solid fa-ellipsis-vertical"></i>
+    </button>
+    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownMenu{{ tweet.id }}">
+      <li><a class="dropdown-item" href="{% url 'tweet_edit' tweet.id %}">Edit</a></li>
+      <li><a class="dropdown-item text-danger" href="{% url 'tweet_delete' tweet.id %}">Delete</a></li>
+    </ul>
+  </div>
+  {% endif %}
+</div>
+
+
+  </div>
+</div>
+{% endfor %}
+
+</div>
+
+{% endblock %}

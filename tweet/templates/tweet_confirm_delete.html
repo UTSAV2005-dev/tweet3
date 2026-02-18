@@ -1,0 +1,12 @@
+{% extends 'layout.html' %}
+
+{% block title %}Index{% endblock %}
+
+{% block content %}
+<h1 class="text-white">Are you sure ?</h1>
+<form method="post">
+    <button class="btn btn-danger" >Yes, delete</button>
+    <a class="btn btn-secondary" href="{% url 'tweet_list' %}">Cancel</a>
+    {% csrf_token %}
+</form>
+{% endblock %}

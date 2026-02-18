@@ -1,0 +1,32 @@
+{% extends "layout.html" %}
+
+{% block title %}Reviews{% endblock %}
+
+{% block content %}
+
+
+
+<div class="container my-5">
+  <div class="text-center mb-4">
+    <h1 class="fw-bold">User Reviews</h1>
+    <p class="text-muted">See what our users have to say about their experience with Umm Ummm.</p>
+  </div>
+
+  {% if reviews %}
+    <div class="list-group">
+      {% for review in reviews %}
+        <div class="list-group-item mb-3">
+          <h5 class="mb-1">{{ review.user.username }} - Rating: {{ review.rating }}/5</h5>
+          <p class="mb-1">{{ review.comment }}</p>
+          <small class="text-muted">Reviewed on {{ review.created_at|date:"F j, Y, g:i a" }}</small>
+        </div>
+      {% endfor %}
+
+    </div>
+  {% else %}
+    <p class="text-center text-muted">No reviews yet. Be the first to share your experience!</p>
+  {% endif %}
+  <a class="btn btn-primary " href="{% url 'add_review' %}">Add Review</a>
+</div> 
+
+{% endblock %}

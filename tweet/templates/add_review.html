@@ -1,0 +1,13 @@
+{% extends 'layout.html' %}
+
+{% block title %}Add Review{% endblock %}
+
+{% block content %}
+<h1 class="text-white">Add Review</h1>
+<form method="post" enctype="multipart/form-data" class="form">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit" class="btn btn-primary mb-2">Submit Review</button>
+</form>
+<a href="{% url 'reviews' %}" class="btn btn-secondary">Back to Reviews</a>
+{% endblock %}

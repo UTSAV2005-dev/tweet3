@@ -1,0 +1,10 @@
+{% extends "layout.html" %}
+
+{% block content %}
+  <h2>Logged Out</h2>
+  <p>You are logged out
+    <a href="{% url "tweet_list" %}"> 
+    Continue as a Guest
+    </a>
+    </p>
+{% endblock content %}
